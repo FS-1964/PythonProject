@@ -1,6 +1,7 @@
 
 
 import requests
+import os
 from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -65,3 +66,12 @@ class WeatherForecast:
         # Save the plot
         plt.savefig('weather_chart.png')
         plt.show()
+
+
+
+
+
+
+
+
+

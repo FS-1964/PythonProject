@@ -5,6 +5,7 @@ class Auto:
         self.sitze = sitze
         self.energie = energie
         self.art = art
+    @classmethod
     def basedisplay(self):
         print(self.name,self.marke,self.sitze,self.energie,self.art)
 class SportAuto(Auto):
