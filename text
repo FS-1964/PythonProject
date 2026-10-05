@@ -1,0 +1,124 @@
+import tkinter as tk
+
+#from numpy.f2py.crackfortran import analyzeargs_re_1
+
+
+from Weather import weatherexporter
+from Weather import WeatherForecast
+
+import analyzer
+
+from TitTacToe.TicTacToeGUI import TicTacToeGUI
+def wheatherfunction():
+    wf = WeatherForecast.WeatherForecast(
+        latitude="35.68",
+        longitude="139.69",
+        startdate="2026-09-17",
+        enddate="2026-09-24",
+        city="Tokio",
+    )
+    wd = weatherexporter.WeatherExporter(
+        latitude="35.68",
+        longitude="139.69",
+        city="Tokio",
+        startdate="2026-09-17",
+        enddate="2026-09-24",
+    )
+
+    wf.visualize_weather_forecast()
+    wf.print_weather_forecast()
+    path = wd.export_to_csv()
+def TicTakToeFunction():
+    root = tk.Tk()
+    app = TicTacToeGUI(root)
+    root.mainloop()
+"""
+paris:
+    latitude="48.85"
+    longitude="2.35"
+london:
+    latitude="31.50"
+    longitude="-0.12"
+tokio:
+    latitude="35.68"
+    longitude="139.69"
+
+"""
+
+
+
+
+
+#zufall.zufallgame()
+#print(zufall.addieren(1,2,3,4))
+#tittac.spiel_brett(tittac.erstelle_brett())
+#sportauto= Auto.SportAuto("ferrari","Poursche",2,"benzin","sport",50000)
+#sportauto.display()
+#sportauto.basedisplay()
+
+#ana= analyzer.Analyzer("sales","C:\\Dev\\PythonProject\\sales-analysis\\data\\sales.csv","csv")
+#ana.open_file()
+#print(ana.calculate_totals())
+#df=ana.calculate_totals()
+#ana.visualize_totals(df)
+#ana.visualize_total_by_date(df)
+#ana.visualize_product_total_by_date(df)
+#ana.visualize_stacked(df)
+
+
+
+
+
+
+#analyzer.Analyzer.open_file("C:\\Users\\farib\\PycharmProjects\\PythonProject\\sales-analysis\\output\\sales_data.json")
+#ana = analyzer.Analyzer("fcs","C:\\Users\\farib\\PycharmProjects\\PythonProject\\sales-analysis\\output\\nox.txt","txt")
+#ana.open_file()
+
+#wheatherfunction()
+#TicTakToeFunction()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+ def  build_weather_tab(self):
+
+        tk.Label(self.weather_tab, text="Weather Dashboard", font=("Arial", 18)).pack(pady=10)
+        canvas = tk.Canvas(self.weather_tab)
+        scrollbar = tk.Scrollbar(self.weather_tab, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor="nw")
+
+        frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        self.country_data()
+        #tk.Button(frame, text="Wetter Daten anzeigen", command=self.show_weather_dashboard).pack(fill="x", padx=20, pady=5)
+
+
+        # Output text
+        self.weather_output = scrolledtext.ScrolledText(frame, height=10)
+        self.weather_output.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # Chart area
+        self.weather_chart_frame = tk.Frame(frame)
+        self.weather_chart_frame.pack(fill="both", expand=True)
+
+
+"""

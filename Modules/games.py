@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-class TicTacToeGUI:
+
+class tictactoe:
     def __init__(self, root):
         self.root = root
-        self.root.title("Tic Tac Toe")
+       # self.root.title("Tic Tac Toe")
 
         self.brett = self.erstelle_brett()
         self.aktuelle_spieler = "X"
@@ -12,30 +13,31 @@ class TicTacToeGUI:
 
         self.spielfeld_erstellen()
 
+    @staticmethod
     def erstelle_brett():
         return [[" " for _ in range(3)] for _ in range(3)]
 
+    @staticmethod
     def check_winner(brett, spieler):
-        # Reihen
         for z in range(3):
             if brett[z][0] == brett[z][1] == brett[z][2] == spieler:
                 return True
-        # Spalten
         for s in range(3):
             if brett[0][s] == brett[1][s] == brett[2][s] == spieler:
                 return True
-        # Diagonalen
         if brett[0][0] == brett[1][1] == brett[2][2] == spieler:
             return True
         if brett[0][2] == brett[1][1] == brett[2][0] == spieler:
             return True
         return False
 
+    @staticmethod
     def check_remie(brett):
         for zeile in brett:
             if " " in zeile:
                 return False
         return True
+
     def spielfeld_erstellen(self):
         frame = tk.Frame(self.root, bg="black")
         frame.pack()
@@ -57,25 +59,21 @@ class TicTacToeGUI:
 
     def klick(self, zeile, spalte):
         if self.brett[zeile][spalte] != " ":
-            return  # Feld schon belegt
+            return
 
-        # Setze Zeichen
         self.brett[zeile][spalte] = self.aktuelle_spieler
         self.buttons[zeile][spalte].config(text=self.aktuelle_spieler)
 
-        # Gewinner?
         if self.check_winner(self.brett, self.aktuelle_spieler):
             messagebox.showinfo("Spielende", f"Spieler {self.aktuelle_spieler} hat gewonnen!")
             self.reset()
             return
 
-        # Remis?
         if self.check_remie(self.brett):
             messagebox.showinfo("Spielende", "Unentschieden!")
             self.reset()
             return
 
-        # Spieler wechseln
         self.aktuelle_spieler = "O" if self.aktuelle_spieler == "X" else "X"
 
     def reset(self):
