@@ -14,8 +14,7 @@ class TestTicTacToeGUI(unittest.TestCase):
 
         # Buttons mocken
         with patch("tkinter.Button") as mock_button, \
-             patch("tkinter.Frame") as mock_frame:
-
+                patch("tkinter.Frame") as mock_frame:
             # Button-Mock erzeugen
             btn_mock = MagicMock()
             mock_button.return_value = btn_mock
@@ -32,7 +31,7 @@ class TestTicTacToeGUI(unittest.TestCase):
     # Test: Brett wird korrekt erstellt
     # ---------------------------------------------------------
     def test_erstelle_brett(self):
-        brett = tictactoe.erstelle_brett()
+        brett = erstelle_brett()
         self.assertEqual(len(brett), 3)
         self.assertEqual(len(brett[0]), 3)
         self.assertEqual(brett[0][0], " ")
@@ -109,4 +108,3 @@ class TestTicTacToeGUI(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

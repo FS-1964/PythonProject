@@ -1,24 +1,24 @@
 import tkinter as tk
 from tkinter import messagebox
 
-class tictactoe:
-    def __init__(self, root):
-        self.root = root
-       # self.root.title("Tic Tac Toe")
 
-        self.brett = self.erstelle_brett()
+def erstelle_brett():
+    return [[" " for _ in range(3)] for _ in range(3)]
+
+
+class tictactoe:
+    def __init__(self, root, finished_callback=None):
+        self.root = root
+        self.frame = None
+        self.finished_callback = finished_callback
+        self.brett = erstelle_brett()
         self.aktuelle_spieler = "X"
 
         self.buttons = [[None for _ in range(3)] for _ in range(3)]
 
         self.spielfeld_erstellen()
 
-    @staticmethod
-    def erstelle_brett():
-        return [[" " for _ in range(3)] for _ in range(3)]
-
-    @staticmethod
-    def check_winner(brett, spieler):
+    def check_winner(self, brett, spieler):
         for z in range(3):
             if brett[z][0] == brett[z][1] == brett[z][2] == spieler:
                 return True
@@ -31,21 +31,24 @@ class tictactoe:
             return True
         return False
 
-    @staticmethod
-    def check_remie(brett):
+    def check_remie(self, brett):
         for zeile in brett:
             if " " in zeile:
                 return False
         return True
 
     def spielfeld_erstellen(self):
-        frame = tk.Frame(self.root, bg="black")
-        frame.pack()
+        # altes Spielfeld löschen
+        if self.frame is not None:
+            self.frame.destroy()
+
+        self.frame = tk.Frame(self.root, bg="black")  # <-- FIX
+        self.frame.pack()
 
         for z in range(3):
             for s in range(3):
                 btn = tk.Button(
-                    frame,
+                    self.frame,  # jetzt korrekt!
                     text=" ",
                     font=("Arial", 32, "bold"),
                     width=4,
@@ -66,18 +69,23 @@ class tictactoe:
 
         if self.check_winner(self.brett, self.aktuelle_spieler):
             messagebox.showinfo("Spielende", f"Spieler {self.aktuelle_spieler} hat gewonnen!")
+            winner = self.aktuelle_spieler
             self.reset()
+            if self.finished_callback:
+                self.finished_callback(winner)
             return
 
         if self.check_remie(self.brett):
             messagebox.showinfo("Spielende", "Unentschieden!")
             self.reset()
+            if self.finished_callback:
+                self.finished_callback("draw")
             return
 
         self.aktuelle_spieler = "O" if self.aktuelle_spieler == "X" else "X"
 
     def reset(self):
-        self.brett = self.erstelle_brett()
+        self.brett = erstelle_brett()
         self.aktuelle_spieler = "X"
         for z in range(3):
             for s in range(3):

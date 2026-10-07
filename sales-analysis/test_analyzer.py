@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import patch, mock_open
 import pandas as pd
 
-from analyzer import Analyzer
+from Modules.weather import analyzer
+
 
 class TestAnalyzer(unittest.TestCase):
 
@@ -12,10 +13,10 @@ class TestAnalyzer(unittest.TestCase):
         self.xlsx_path = "data/test.xlsx"
         self.txt_path = "data/test.txt"
 
-        self.analyzer_csv = Analyzer("test.csv", self.csv_path, "csv")
-        self.analyzer_json = Analyzer("test.json", self.json_path, "json")
-        self.analyzer_xlsx = Analyzer("test.xlsx", self.xlsx_path, "xlsx")
-        self.analyzer_txt = Analyzer("test.txt", self.txt_path, "txt")
+        self.analyzer_csv = analyzer("test.csv", self.csv_path, "csv")
+        self.analyzer_json = analyzer("test.json", self.json_path, "json")
+        self.analyzer_xlsx = analyzer("test.xlsx", self.xlsx_path, "xlsx")
+        self.analyzer_txt = analyzer("test.txt", self.txt_path, "txt")
 
     # ---------------------------------------------------------
     # CSV TEST
@@ -68,10 +69,10 @@ class TestAnalyzer(unittest.TestCase):
         mock_file.assert_called_once_with(self.txt_path, "r")
 
     # ---------------------------------------------------------
-    # calculate_totals TEST
+    # calculate_totals TEST Modules.weather
     # ---------------------------------------------------------
     @patch("pandas.read_csv")
-    @patch("analyzer.calculate_total")
+    @patch("Modules.weather.analyzer.calculate_totals")
     def test_calculate_totals(self, mock_calc_total, mock_read_csv):
         mock_df = pd.DataFrame({
             "quantity": [2, 3],
@@ -91,4 +92,3 @@ class TestAnalyzer(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

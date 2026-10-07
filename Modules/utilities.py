@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 class helper:
-    def __init__(self,filename,path,fileformat):
+    def __init__(self, filename, path, fileformat):
         self.path = path
         self.filename = filename
         self.fileformat = fileformat

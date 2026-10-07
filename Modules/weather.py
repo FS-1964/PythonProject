@@ -1,12 +1,12 @@
-
 import os
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from tkinter import messagebox
-from Modules.utilities import  helper
+from Modules.utilities import helper
 
 import json
+
 
 class weatherexporter:
     def __init__(self, latitude, longitude, city, startdate, enddate):
@@ -53,8 +53,9 @@ class weatherexporter:
     def export_to_csv(self):
         weather_data = self.get_weather_forecast()
         df = self.convert_to_dataframe(weather_data)
-        path=self.save_csv(df)
+        path = self.save_csv(df)
         return path
+
 
 class weatherforecast:
 
@@ -80,23 +81,24 @@ class weatherforecast:
             return data
 
         except requests.exceptions.Timeout:
-            messagebox.showerror(f"Timeout Error","❌ Fehler: Die Anfrage an Open-Meteo hat zu lange gedauert (Timeout).")
+            messagebox.showerror(f"Timeout Error",
+                                 "❌ Fehler: Die Anfrage an Open-Meteo hat zu lange gedauert (Timeout).")
             return None
 
         except requests.exceptions.ConnectionError:
-            messagebox.showerror(f"Connection Error","❌ Fehler: Keine Internetverbindung oder API nicht erreichbar.")
+            messagebox.showerror(f"Connection Error", "❌ Fehler: Keine Internetverbindung oder API nicht erreichbar.")
             return None
 
         except requests.exceptions.HTTPError as e:
-            messagebox.showerror(f"HTTP Error",f"❌ HTTP-Fehler: {e}[change the startdate]")
+            messagebox.showerror(f"HTTP Error", f"❌ HTTP-Fehler: {e}[change the startdate]")
             return None
 
         except ValueError:
-            messagebox.showerror(f"Response value Error","❌ Fehler: Die API hat ein ungültiges JSON zurückgegeben.")
+            messagebox.showerror(f"Response value Error", "❌ Fehler: Die API hat ein ungültiges JSON zurückgegeben.")
             return None
 
         except Exception as e:
-            messagebox.showerror(f"Unknown Error",f"❌ Error",f"Unerwarteter Fehler: {e}")
+            messagebox.showerror(f"Unknown Error", f"❌ Error", f"Unerwarteter Fehler: {e}")
             return None
 
     def extract_weather_forecast(self):
@@ -120,7 +122,6 @@ class weatherforecast:
         print(df)
         return df
 
-
     def visualize_weather_forecast(self):
         df = self.extract_weather_forecast()
 
@@ -139,13 +140,13 @@ class weatherforecast:
 
         return fig
 
+
 class analyzer:
-    def __init__(self, filename,path,format):
+    def __init__(self, filename, path, format):
         self.filename = filename
         self.path = path
         self.format = format
         self.df = None
-
 
     def open_file(self):
         match self.format:
@@ -159,21 +160,17 @@ class analyzer:
                     df = json.load(f)
                     print(f"JSON Data: {df}")
             case 'xlsx':
-                    df = pd.read_excel(self.path)
-                    print(f"Excel Data: {df}")
+                df = pd.read_excel(self.path)
+                print(f"Excel Data: {df}")
             case 'txt':
-                    try:
-                        # Read a number from a file
-                        with open(self.path, 'r') as f:
-                            text = f.read()
+                try:
+                    # Read a number from a file
+                    with open(self.path, 'r') as f:
+                        text = f.read()
 
-
-                        print(f"Result: {text}")
-                    except FileNotFoundError:
-                        print("File not found")
-
-
-
+                    print(f"Result: {text}")
+                except FileNotFoundError:
+                    print("File not found")
 
     def calculate_totals(self):
 
@@ -194,8 +191,6 @@ class analyzer:
 
     def visualize_totals(self, df):
 
-
-
         grouped = df.groupby("product")["total"].sum()
 
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -206,27 +201,29 @@ class analyzer:
         ax.set_ylabel("Umsatz (€)")
         ax.grid(axis="y", linestyle="--", alpha=0.6)
         ax.tick_params(axis='x', rotation=0)  # <--- horizontal
+
         return fig
 
-        # ---------------------------------------------------------
-        # 2) Umsatz pro Datum (Line Chart)
-        # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    # 2) Umsatz pro Datum (Line Chart)
+    # ---------------------------------------------------------
+
+
     def visualize_total_by_date(self, df):
-            grouped = df.groupby("date")["total"].sum()
+        grouped = df.groupby("date")["total"].sum()
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        grouped.plot(kind="line", marker="o", color="#4e79a7")
+
+        ax.set_title("Gesamtumsatz pro Datum")
+        ax.set_xlabel("Datum")
+        ax.set_ylabel("Umsatz (€)")
+        ax.grid(True)
+        ax.tick_params(axis='x', rotation=0)  # <--- horizontal
+        return fig
 
 
-            fig, ax = plt.subplots(figsize=(6, 4))
-            grouped.plot(kind="line", marker="o", color="#4e79a7")
-
-            ax.set_title("Gesamtumsatz pro Datum")
-            ax.set_xlabel("Datum")
-            ax.set_ylabel("Umsatz (€)")
-            ax.grid(True)
-            ax.tick_params(axis='x', rotation=0)  # <--- horizontal
-            return fig
-
-
-    def visualize_trend(self,df):
+    def visualize_trend(self, df):
         pivot = df.pivot_table(index="date", columns="product", values="total", aggfunc="sum")
 
         pivot.plot(kind="line", marker="o", figsize=(6, 4))
@@ -241,47 +238,37 @@ class analyzer:
         ax.tick_params(axis='x', rotation=0)  # <--- horizontal
         return fig
 
+    # ---------------------------------------------------------
+    # 3) Produkt-Umsatz pro Datum (Grouped Bar Chart)
+    # ---------------------------------------------------------
 
 
-        # ---------------------------------------------------------
-        # 3) Produkt-Umsatz pro Datum (Grouped Bar Chart)
-        # ---------------------------------------------------------
     def visualize_product_total_by_date(self, df):
-            pivot = df.pivot_table(index="date", columns="product", values="total", aggfunc="sum")
+        pivot = df.pivot_table(index="date", columns="product", values="total", aggfunc="sum")
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        pivot.plot(kind="bar", ax=ax)
+
+        ax.set_title("Umsatz pro Produkt und Datum")
+        ax.set_xlabel("Datum")
+        ax.set_ylabel("Umsatz (€)")
+        ax.grid(axis="y", linestyle="--", alpha=0.6)
+        ax.tick_params(axis='x', rotation=0)  # <--- horizontal
+        return fig
 
 
-
-            fig, ax = plt.subplots(figsize=(6, 4))
-            pivot.plot(kind="bar", ax=ax)
-
-            ax.set_title("Umsatz pro Produkt und Datum")
-            ax.set_xlabel("Datum")
-            ax.set_ylabel("Umsatz (€)")
-            ax.grid(axis="y", linestyle="--", alpha=0.6)
-            ax.tick_params(axis='x', rotation=0)  # <--- horizontal
-            return fig
-
-
-
-
-        # ---------------------------------------------------------
-        # 4) Gestapelter Umsatz pro Datum (Stacked Bar Chart)
-        # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    # 4) Gestapelter Umsatz pro Datum (Stacked Bar Chart)
+    # ---------------------------------------------------------
     def visualize_stacked(self, df):
-            pivot = df.pivot_table(index="date", columns="product", values="total", aggfunc="sum")
+        pivot = df.pivot_table(index="date", columns="product", values="total", aggfunc="sum")
 
-            fig, ax = plt.subplots(figsize=(6, 4))
-            pivot.plot(kind="bar", stacked=True, ax=ax)
+        fig, ax = plt.subplots(figsize=(6, 4))
+        pivot.plot(kind="bar", stacked=True, ax=ax)
 
-            ax.set_title("Gestapelter Umsatz pro Datum")
-            ax.set_xlabel("Datum")
-            ax.set_ylabel("Umsatz (€)")
-            ax.grid(axis="y", linestyle="--", alpha=0.6)
-            ax.tick_params(axis='x', rotation=0)  # <--- horizontal
-            return fig
-
-
-
-
-
-
+        ax.set_title("Gestapelter Umsatz pro Datum")
+        ax.set_xlabel("Datum")
+        ax.set_ylabel("Umsatz (€)")
+        ax.grid(axis="y", linestyle="--", alpha=0.6)
+        ax.tick_params(axis='x', rotation=0)  # <--- horizontal
+        return fig
