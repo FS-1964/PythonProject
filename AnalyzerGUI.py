@@ -1,12 +1,15 @@
 import datetime
 import os
 
+from stockfish import Stockfish
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk, scrolledtext
+
+from fontTools.cffLib import width
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkcalendar import DateEntry
-from Modules.games import tictactoe
+from Modules.games import tictactoe, ChessGame, MemoryGame
 from Modules.weather import analyzer
 from Modules.weather import weatherforecast
 
@@ -14,8 +17,16 @@ from Modules.weather import weatherforecast
 class AnalyzerGUI:
     def __init__(self):
 
-        # self.on_game_finished = None
-        # self.select_csv = None
+
+        self.memory_container = None
+        self.memory_tab = None
+        self.stockfish = Stockfish(
+            path=r"C:\Dev\Stockfish\stockfish-windows-x86-64-universal.exe"
+        )
+
+        self.stockfish.set_skill_level(10)
+        self.chess_container = None
+        self.build_theme()
         self.chart_combo = None
         self.chart_var = None
         self.score_label = None
@@ -28,8 +39,7 @@ class AnalyzerGUI:
         self.start_btn = None
         self.info_label = None
         self.label_text = None
-        #  self.ana = analyzer(filename, path, fileformat)
-        # self.df = self.ana.calculate_totals()
+
         self.country_coords = {
             "Deutschland": (52.52, 13.40),  # Berlin
             "Österreich": (48.2082, 16.3738),  # Wien
@@ -41,6 +51,9 @@ class AnalyzerGUI:
         }
 
         self.window = tk.Tk()
+        self.window.grid_rowconfigure(0, weight=1)
+        self.window.grid_columnconfigure(0, weight=1)
+
         self.window.title("Dashboard Analyzer")
         self.window.geometry("1000x700")
         self.enddate = ""
@@ -49,7 +62,7 @@ class AnalyzerGUI:
         # TABS
         # ---------------------------------------------------------
         notebook = ttk.Notebook(self.window)
-        notebook.pack(fill="both", expand=True)
+        notebook.grid(row=0, column=0, sticky="nsew")
 
         # Sales Tab
         self.sales_tab = tk.Frame(notebook)
@@ -59,9 +72,17 @@ class AnalyzerGUI:
         self.weather_tab = tk.Frame(notebook)
         notebook.add(self.weather_tab, text="Weather")
 
-        # Games Tab
+        # tictactoe Tab
         self.games_tab = tk.Frame(notebook)
-        notebook.add(self.games_tab, text="Games")
+        notebook.add(self.games_tab, text="TicTacToe")
+
+        # chess Tab
+        self.chess_tab = tk.Frame(notebook)
+        notebook.add(self.chess_tab, text="Chess")
+
+        # memory Tab
+        self.memory_tab = tk.Frame(notebook)
+        notebook.add(self.memory_tab, text="Memory")
 
         # ---------------------------------------------------------
         # SALES TAB CONTENT (scrollbar + charts + text)
@@ -77,11 +98,13 @@ class AnalyzerGUI:
         # SYSTEM TAB CONTENT
         # ---------------------------------------------------------
         self.build_system_tab()
-
+        self.build_chess_tab()
+        self.build_memory_tab()
         self.window.mainloop()
 
     def show_selected_chart(self):
         # Chart-Bereich leeren
+
         for widget in self.sales_chart_frame.winfo_children():
             widget.destroy()
 
@@ -105,6 +128,19 @@ class AnalyzerGUI:
     # ---------------------------------------------------------
     # SALES TAB
     # ---------------------------------------------------------
+    def build_theme(self):
+        if self.enable_dark_mode:
+            self.bg = "#2B3035"
+            self.card = "#373E44"
+            self.fg = "#FFFFFF"
+            self.button_bg = "#4A90E2"
+            self.button_hover = "#6AA8FF"
+        else:
+            self.bg = "#F2F2F2"
+            self.card = "#FFFFFF"
+            self.fg = "#000000"
+            self.button_bg = "#4A90E2"
+            self.button_hover = "#6AA8FF"
 
     def enable_dark_mode(self):
         style = ttk.Style()
@@ -122,82 +158,161 @@ class AnalyzerGUI:
         style.configure("TCombobox", fieldbackground="#2a2a2a", foreground=dark_fg)
 
     def create_card(self, parent, title, bg):
-        card = tk.Frame(parent, bg=bg, highlightthickness=0)
+        card = tk.Frame(parent, bg=self.card, bd=0, highlightthickness=0)
+
         tk.Label(card, text=title, bg=bg, fg="white", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=5)
         return card
 
     def build_sales_tab(self):
         self.enable_dark_mode()
 
-        # Canvas + Scrollbar
-        canvas = tk.Canvas(self.sales_tab, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.sales_tab, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self.sales_tab.configure(bg=self.bg)
 
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-
-        # Frame im Canvas
-        frame = ttk.Frame(canvas)
-
-        # ⭐ Fenster-ID speichern, damit wir die Breite anpassen können
-        frame_id = canvas.create_window((0, 0), window=frame, anchor="nw")
-
-        # ⭐ Canvas-Breite immer anpassen → rechter Leerraum verschwindet
-        canvas.bind("<Configure>", lambda e: canvas.itemconfig(frame_id, width=e.width))
-
-        # Scrollbereich aktualisieren
-        frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-
-        # Mausrad aktivieren
-        self.bind_mousewheel(frame, canvas)
-
-        # Responsive Layout
-        frame.grid_columnconfigure(0, weight=1)
+        # Layout
+        self.sales_tab.grid_columnconfigure(0, weight=1)
+        self.sales_tab.grid_rowconfigure(3, weight=1)
 
         # Titel
-        ttk.Label(frame, text="Sales Dashboard", font=("Arial", 20, "bold")).grid(row=0, column=0, pady=15)
+        tk.Label(
+            self.sales_tab,
+            text="Sales Dashboard",
+            font=("Arial", 20, "bold"),
+            bg=self.bg,
+            fg=self.fg
+        ).grid(row=0, column=0, pady=(5, 10), sticky="ew")
 
-        # Card 1 – CSV Optionen
-        card_csv = self.create_card(frame, "CSV Optionen", "#373E44")
-        card_csv.grid(row=1, column=0, sticky="ew", padx=15, pady=10)
+        # ---------------------------------------------------
+        # Card: Auswahl
+        # ---------------------------------------------------
 
-        ttk.Button(card_csv, text="CSV auswählen", command=self.select_csv).pack(fill="x", pady=5)
-        ttk.Button(card_csv, text="CSV anzeigen", command=lambda: self.show_csv(frame)).pack(fill="x", pady=5)
+        card_chart = self.create_card(
+            self.sales_tab,
+            "Diagramm Auswahl",
+            "#373E44"
+        )
 
-        # Card 2 – Diagramm Auswahl
-        card_chart = self.create_card(frame, "Diagramm Auswahl", "#373E44")
-        card_chart.grid(row=2, column=0, sticky="ew", padx=15, pady=10)
+        card_chart.grid(
+            row=1,
+            column=0,
+            padx=10,
+            pady=5,
+            sticky="ew"
+        )
 
+        card_chart.grid_columnconfigure(0, weight=1)
+
+        # Combobox links
         self.chart_var = tk.StringVar()
-        self.chart_combo = ttk.Combobox(card_chart, foreground="#111111", textvariable=self.chart_var, state="readonly")
-        self.chart_combo['values'] = [
+
+        self.chart_combo = ttk.Combobox(
+            card_chart,
+            width=35,
+            textvariable=self.chart_var,
+            state="readonly"
+        )
+
+        self.chart_combo["values"] = [
             "Gesamtumsatz pro Produkt",
             "Gesamtumsatz pro Datum",
             "Produktumsatz pro Datum",
             "Gestapelter Umsatz pro Datum"
         ]
+
         self.chart_combo.current(0)
-        self.chart_combo.pack(fill="x", pady=5)
 
-        ttk.Button(card_chart, text="Diagram anzeigen", command=self.show_selected_chart).pack(fill="x", pady=10)
+        self.chart_combo.pack(
+            anchor="w",
+            padx=10,
+            pady=(0, 10)
+        )
 
-        # Card 3 – Ausgabe
-        card_output = self.create_card(frame, "Ausgabe", bg="#373E44")
+        # Button-Leiste
+        button_row = tk.Frame(
+            card_chart,
+            bg="#373E44"
+        )
 
-        card_output.grid(row=3, column=0, sticky="nsew", padx=15, pady=10)
-        frame.grid_rowconfigure(3, weight=1)
+        button_row.pack(
+            fill="x",
+            pady=5
+        )
 
-        self.sales_output = scrolledtext.ScrolledText(card_output, height=10)
-        self.sales_output.pack(fill="both", expand=True)
+        ttk.Button(
+            button_row,
+            text="Diagram anzeigen",
+            width=20,
+            command=self.show_selected_chart
+        ).pack(side="left", padx=5)
 
-        # Card 4 – Chart
-        card_chart_area = self.create_card(frame, "Diagramm", "#373E44")
-        card_chart_area.grid(row=4, column=0, sticky="nsew", padx=15, pady=10)
-        frame.grid_rowconfigure(4, weight=1)
+        ttk.Button(
+            button_row,
+            text="CSV auswählen",
+            width=20,
+            command=self.select_csv
+        ).pack(side="left", padx=5)
 
-        self.sales_chart_frame = ttk.Frame(card_chart_area)
-        self.sales_chart_frame.pack(fill="both", expand=True)
+        ttk.Button(
+            button_row,
+            text="CSV anzeigen",
+            width=20,
+            command=lambda: self.show_csv(self.sales_tab)
+        ).pack(side="left", padx=5)
+
+        # ---------------------------------------------------
+        # Card: Ausgabe
+        # ---------------------------------------------------
+
+        card_output = self.create_card(
+            self.sales_tab,
+            "Ausgabe",
+            "#373E44"
+        )
+
+        card_output.grid(
+            row=2,
+            column=0,
+            padx=10,
+            pady=5,
+            sticky="nsew"
+        )
+
+        self.sales_output = scrolledtext.ScrolledText(
+            card_output,
+            height=6
+        )
+
+        self.sales_output.pack(
+            fill="both",
+            expand=True
+        )
+
+        # ---------------------------------------------------
+        # Card: Diagramm
+        # ---------------------------------------------------
+
+        card_chart_area = self.create_card(
+            self.sales_tab,
+            "Diagramm",
+            "#373E44"
+        )
+
+        card_chart_area.grid(
+            row=3,
+            column=0,
+            padx=10,
+            pady=(5, 10),
+            sticky="nsew"
+        )
+
+        self.sales_chart_frame = tk.Frame(
+            card_chart_area,
+            bg="#373E44"
+        )
+
+        self.sales_chart_frame.pack(
+            fill="x",
+            expand=False
+        )
 
     def show_weather(self):
         country = self.country_var.get()
@@ -278,7 +393,6 @@ class AnalyzerGUI:
 
         return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
-
     def build_weather_tab(self):
         self.enable_dark_mode()
 
@@ -343,13 +457,10 @@ class AnalyzerGUI:
         self.weather_chart_frame = tk.Frame(frame, bg=card_bg)
         self.weather_chart_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-
-
-
     def start_tictactoe(self):
 
         # Button deaktivieren
-        self.start_btn.config(state="disabled")
+
         # altes Spielfeld löschen
         for widget in self.game_container.winfo_children():
             widget.destroy()
@@ -357,7 +468,6 @@ class AnalyzerGUI:
         # neues Spielfeld in den Container
         self.game = tictactoe(self.game_container, self.on_game_finished)
 
-    # tictactoe(game_frame)
     def on_game_finished(self, winner):
         if winner == "X":
             self.score_x += 1
@@ -370,43 +480,93 @@ class AnalyzerGUI:
         self.score_label.config(text=self.get_score_text())
 
         # Start-Button wieder aktivieren
-        self.start_btn.config(state="normal")
 
     def get_score_text(self):
         return f"X: {self.score_x}   O: {self.score_o}   Unentschieden: {self.score_draw}"
+
+    def reset_score_text(self):
+        self.score_x = 0
+        self.score_o = 0
+        self.score_draw = 0
+
+        self.score_label.config(
+            text=self.get_score_text()
+        )
+
+        # ---------------------------------------------------------
+        # Games TAB
+        # ---------------------------------------------------------
+
+    def build_chess_tab(self):
+        self.enable_dark_mode()
+        # Farben für Dark Mode
+        dark_bg = "#373E44"
+        dark_fg = "#ffffff"
+        card_bg = "#373E44"
+
+        self.chess_tab.configure(bg=dark_bg)
+        info = tk.Label(self.chess_tab, text="Chess", bg=card_bg, fg="gray", font=("Arial", 14))
+        info.pack(pady=20)
+        self.start_chess()
+
+    def build_memory_tab(self):
+        self.enable_dark_mode()
+        # Farben für Dark Mode
+        dark_bg = "#373E44"
+        dark_fg = "#ffffff"
+        card_bg = "#373E44"
+
+        self.memory_tab.configure(bg=dark_bg)
+        info = tk.Label(self.chess_tab, text="Memory", bg=card_bg, fg="gray", font=("Arial", 14))
+        info.pack(pady=20)
+        self.start_memory()
+
+    def start_memory(self):
+
+        self.memory_container = tk.Frame(self.memory_tab)
+        self.memory_container.pack(pady=20)
+        MemoryGame(self.memory_container)
 
     # ---------------------------------------------------------
     # Games TAB
     # ---------------------------------------------------------
     def build_system_tab(self):
-        tk.Label(self.games_tab, text="Games", font=("Arial", 18)).pack(pady=10)
+        self.enable_dark_mode()
+        # Farben für Dark Mode
+        dark_bg = "#373E44"
+        dark_fg = "#ffffff"
+        card_bg = "#373E44"
 
-        info = tk.Label(self.games_tab, text="TicTacToe", font=("Arial", 14))
+        self.games_tab.configure(bg=dark_bg)
+        info = tk.Label(self.games_tab, text="TicTacToe", bg=card_bg, fg="gray", font=("Arial", 14))
         info.pack(pady=20)
-
-        self.start_btn = tk.Button(
-            self.games_tab,
-            text="Spiel starten",
-            font=("Arial", 14),
-            command=self.start_tictactoe
-        )
-        self.start_btn.pack(pady=10)
 
         # ⭐ SCOREBOARD – jetzt sichtbar
         self.score_label = tk.Label(
             self.games_tab,
             text=self.get_score_text(),
             font=("Arial", 14),
-            fg="blue"
+            bg=card_bg,
+            fg="yellow"
         )
         self.score_label.pack(pady=10)  # <-- DIE FEHLENDE ZEILE
 
         # Spielfeld-Container
         self.game_container = tk.Frame(self.games_tab)
         self.game_container.pack(pady=20)
+        self.start_tictactoe()
+        self.start_btn = tk.Button(
+            self.games_tab,
+            text="Reset Score",
+            font=("Arial", 14),
+            command=self.reset_score_text
+        )
+        self.start_btn.pack(pady=10)
 
-    def get_score_text(self):
-        return f"X: {self.score_x}   O: {self.score_o}   Unentschieden: {self.score_draw}"
+    def start_chess(self):
+        self.chess_container = tk.Frame(self.chess_tab)
+        self.chess_container.pack(pady=20)
+        ChessGame(self.chess_container)
 
     def add_chart_row(self, parent, fig_left, fig_right):
         row = tk.Frame(parent)
@@ -466,17 +626,22 @@ class AnalyzerGUI:
         self.sales_output.delete("1.0", tk.END)
         self.sales_output.insert(tk.END, self.df.to_string())
 
-    # ---------------------------------------------------------
-    # CHART EMBEDDING
-    # ---------------------------------------------------------
     def embed_chart(self, parent, fig):
+
+        fig.set_size_inches(5.5, 2.8)
+        fig.tight_layout()
+
         canvas = FigureCanvasTkAgg(fig, master=parent)
         canvas.draw()
-        widget = canvas.get_tk_widget()
-        widget.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Chart automatisch verkleinern, wenn TabPage kleiner ist
-        widget.bind("<Configure>", lambda event: widget.config(width=event.width))
+        widget = canvas.get_tk_widget()
+
+        widget.pack(
+            fill="x",
+            expand=False,
+            padx=10,
+            pady=10
+        )
 
     def bind_mousewheel(self, widget, canvas):
         def _on_mousewheel(event):
