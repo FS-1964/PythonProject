@@ -58,17 +58,6 @@ class MemoryGame:
             text="Memory",
             font=("Arial", 18, "bold")
         ).pack(pady=10)
-        self.score_var = tk.StringVar()
-        self.score_var.set(self.get_score_text())
-
-        tk.Label(
-            self.main_frame,
-            textvariable=self.score_var,
-            font=("Arial", 10, "bold"),
-            fg="blue"
-        ).pack(pady=5)
-        self.info_var = tk.StringVar()
-        self.info_var.set("Züge: 0")
 
         self.time_var = tk.StringVar()
         self.time_var.set("Zeit: 00:00")
@@ -76,13 +65,8 @@ class MemoryGame:
         tk.Label(
             self.main_frame,
             textvariable=self.time_var,
-            font=("Arial", 12)
-        ).pack()
-
-        tk.Label(
-            self.main_frame,
-            textvariable=self.info_var,
-            font=("Arial", 12)
+            font=("Arial", 12),
+            fg="blue"
         ).pack()
 
         self.board_frame = tk.Frame(self.main_frame)
@@ -98,8 +82,8 @@ class MemoryGame:
                 btn = tk.Button(
                     self.board_frame,
                     text="?",
-                    width=6,
-                    height=3,
+                    width=4,
+                    height=2,
                     font=("Arial", 16),
                     command=lambda i=index: self.card_click(i)
                 )
@@ -119,18 +103,22 @@ class MemoryGame:
         self.ranking_var = tk.StringVar()
         self.ranking_var.set("Noch keine Einträge")
 
-        tk.Label(
-            self.main_frame,
-            text="🏆 Rangliste",
-            font=("Arial", 12, "bold")
-        ).pack(pady=(10, 0))
+        ranking_frame = tk.Frame(self.main_frame)
+        ranking_frame.pack(fill="both", padx=10, pady=5)
 
-        tk.Label(
-            self.main_frame,
-            textvariable=self.ranking_var,
-            justify="left",
-            font=("Consolas", 10)
-        ).pack()
+        scrollbar = tk.Scrollbar(ranking_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        self.ranking_list = tk.Listbox(
+            ranking_frame,
+            height=8,
+            font=("Consolas", 10),
+            yscrollcommand=scrollbar.set
+        )
+
+        self.ranking_list.pack(side="left", fill="both", expand=True)
+
+        scrollbar.config(command=self.ranking_list.yview)
         tk.Button(
             self.main_frame,
             text="Neues Spiel",
@@ -161,21 +149,16 @@ class MemoryGame:
 
     def update_ranking(self):
 
-        if not self.highscores:
-            self.ranking_var.set("Noch keine Einträge")
-            return
-
-        text = ""
+        self.ranking_list.delete(0, tk.END)
 
         for idx, entry in enumerate(self.highscores, start=1):
-            text += (
+            self.ranking_list.insert(
+                tk.END,
                 f"{idx:2}. "
                 f"{entry['name']:<12} "
-                f"{entry['moves']:>3} ZZüge "
-                f"{entry['time']}\n"
+                f"{entry['moves']:>3} Züge "
+                f"{entry['time']}"
             )
-
-        self.ranking_var.set(text)
 
     # ----------------------------
     # Kartenklick
@@ -221,10 +204,6 @@ class MemoryGame:
         self.second_card = index
 
         self.moves += 1
-
-        self.info_var.set(
-            f"Züge: {self.moves}"
-        )
 
         self.main_frame.after(
             700,
@@ -322,8 +301,6 @@ class MemoryGame:
         self.moves = 0
         self.matches = 0
 
-        self.info_var.set("Züge: 0")
-
         for row in self.buttons:
             for btn in row:
                 btn.config(
@@ -342,7 +319,7 @@ class MemoryGame:
 
         self.highscores.clear()
 
-        self.update_ranking()
+        self.ranking_list.delete(0, tk.END)
 
     def reset_scoreboard(self):
 
@@ -350,10 +327,6 @@ class MemoryGame:
         self.best_moves = None
         self.best_time = None
         self.best_time_seconds = None
-
-        self.score_var.set(
-            self.get_score_text()
-        )
 
 
 class tictactoe:
