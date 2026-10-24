@@ -159,6 +159,13 @@ class MemoryGame:
                 f"{entry['moves']:>3} Züge "
                 f"{entry['time']}"
             )
+        if self.ranking_list.size() > 0:
+            self.ranking_list.itemconfig(0, fg="green")
+
+        if self.ranking_list.size() > 1:
+            self.ranking_list.itemconfig(1, fg="blue")
+        for i in range(2, self.ranking_list.size()):
+            self.ranking_list.itemconfig(i, fg="black")
 
     # ----------------------------
     # Kartenklick
@@ -312,8 +319,9 @@ class MemoryGame:
         self.timer_running = True
 
         self.update_timer()
-        self.reset_scoreboard()
-        self.reset_ranking()
+
+    # self.reset_scoreboard()
+    # self.reset_ranking()
 
     def reset_ranking(self):
 
@@ -394,7 +402,7 @@ class tictactoe:
         self.buttons[zeile][spalte].config(text=self.aktuelle_spieler)
 
         if self.check_winner(self.brett, self.aktuelle_spieler):
-            messagebox.showinfo("Spielende", f"Spieler {self.aktuelle_spieler} hat gewonnen!")
+            # messagebox.showinfo("Spielende", f"Spieler {self.aktuelle_spieler} hat gewonnen!")
             winner = self.aktuelle_spieler
             self.reset()
             if self.finished_callback:

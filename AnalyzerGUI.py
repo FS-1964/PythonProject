@@ -17,7 +17,6 @@ from Modules.weather import weatherforecast
 class AnalyzerGUI:
     def __init__(self):
 
-
         self.memory_container = None
         self.memory_tab = None
         self.stockfish = Stockfish(
@@ -29,12 +28,14 @@ class AnalyzerGUI:
         self.build_theme()
         self.chart_combo = None
         self.chart_var = None
-        self.score_label = None
+        # self.score_label = None
         self.game_container = None
-        self.game = None
         self.score_x = 0
         self.score_o = 0
         self.score_draw = 0
+
+        self.score_label = None
+        self.game = None
 
         self.start_btn = None
         self.info_label = None
@@ -163,6 +164,11 @@ class AnalyzerGUI:
         tk.Label(card, text=title, bg=bg, fg="white", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=5)
         return card
 
+    def on_chart_selected(self, event):
+        for widget in self.sales_chart_frame.winfo_children():
+            widget.destroy()
+        self.show_selected_chart()
+
     def build_sales_tab(self):
         self.enable_dark_mode()
 
@@ -218,14 +224,16 @@ class AnalyzerGUI:
             "Gestapelter Umsatz pro Datum"
         ]
 
-        self.chart_combo.current(0)
-
         self.chart_combo.pack(
             anchor="w",
             padx=10,
             pady=(0, 10)
         )
-
+        self.chart_combo.bind(
+            "<<ComboboxSelected>>",
+            self.on_chart_selected
+        )
+        self.chart_combo.current(0)
         # Button-Leiste
         button_row = tk.Frame(
             card_chart,
@@ -236,13 +244,14 @@ class AnalyzerGUI:
             fill="x",
             pady=5
         )
-
+        """
         ttk.Button(
             button_row,
             text="Diagram anzeigen",
             width=20,
             command=self.show_selected_chart
         ).pack(side="left", padx=5)
+        """
 
         ttk.Button(
             button_row,
@@ -251,12 +260,12 @@ class AnalyzerGUI:
             command=self.select_csv
         ).pack(side="left", padx=5)
 
-        ttk.Button(
-            button_row,
-            text="CSV anzeigen",
-            width=20,
-            command=lambda: self.show_csv(self.sales_tab)
-        ).pack(side="left", padx=5)
+        #  ttk.Button(
+        #    button_row,
+        #    text="CSV anzeigen",
+        #    width=20,
+        #    command=lambda: self.show_csv(self.sales_tab)
+        # ).pack(side="left", padx=5)
 
         # ---------------------------------------------------
         # Card: Ausgabe
@@ -673,6 +682,9 @@ class AnalyzerGUI:
             # Charts zurücksetzen
             for widget in self.sales_chart_frame.winfo_children():
                 widget.destroy()
+            self.show_csv(self.sales_tab)
+            self.chart_combo.current(0)
+            self.show_selected_chart()
 
         except Exception as e:
             self.sales_output.delete("1.0", tk.END)
